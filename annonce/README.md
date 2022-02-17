@@ -1,34 +1,43 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# annonce
 
-## Getting Started
+An open web3 inbox where I can see all my project announcements in one place.
 
-First, run the development server:
+Built atop Lens Protocol.
+## Plan.
 
-```bash
-npm run dev
-# or
-yarn dev
-```
+This development process is organised by sprints. Each sprint I intend to build in public, create value for someone, and learn. 
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+See the [Figma](https://www.figma.com/file/rnDb4hvCABecXdxIe14855/lenshacks?node-id=0%3A1) for product research, validation and wireframes.
+### Sprint 1: Discovering Lens Protocol
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+* Create profile
+* Create publication
+* Publish to it
+* Follow it
+* Publish another thing to it
+### Sprint 2: Building out a prototype.
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+The open inbox.
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+* Login with Web3
+* Inbox (show posts from following)
+### Sprint 3: 
 
-## Learn More
+Publications for creators.
 
-To learn more about Next.js, take a look at the following resources:
+* Create a publication (manual URL).
+* Post to your publication.
+* Edit your publication's settings.
+### Sprint 4: 
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Publications for followers.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+* View publication page.
+* Follow/unfollow publication.
 
-## Deploy on Vercel
+## Risks
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+ * How expensive are transactions in Lens? Would it be cheaper to deploy elsewhere, or self-host the chain? 
+ * What sort of indexing infrastructure does Lens provide? Will we need to roll our own?
+ * Is the one-transaction-per-interaction going to be a major UX impediment for users? Can we get around this using a 3box-style approach? 
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
