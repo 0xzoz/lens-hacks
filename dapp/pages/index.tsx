@@ -3,7 +3,18 @@ import Head from 'next/head'
 import Image from 'next/image'
 import styles from '../styles/Home.module.css'
 
+import dynamic from 'next/dynamic'
+
+// WORKAROUND: https://github.com/tmm/wagmi/issues/28
+const WalletConnector = dynamic(() => import('../components/wallet/connector'), { ssr: false })
+const WalletProfile = dynamic(() => import('../components/wallet/profile'), { ssr: false })
+
+
 const Home: NextPage = () => {
+  // const [{ data, error, loading }, disconnect] = useAccount({
+  //   fetchEns: true,
+  // })
+
   return (
     <div className={styles.container}>
       <Head>
@@ -13,7 +24,9 @@ const Home: NextPage = () => {
       </Head>
 
       <main className={styles.main}>
-        
+        {/* <button onClick={}>Connect wallet</button>     */}
+        <WalletConnector/>
+        <WalletProfile/>
       </main>
     </div>
   )
