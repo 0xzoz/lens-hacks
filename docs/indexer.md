@@ -1,4 +1,4 @@
-# Entities
+## Entities
 
 ```
 Inbox
@@ -34,4 +34,20 @@ User
     following: Profile[]
     inbox: Inbox
     profile: Profile
+```
+
+## Event handlers.
+
+```
+onFollow
+    user.following = user.following.push(profile)
+
+onUnfollow
+    user.following = user.following.remove(profile)
+
+onPostToFeedCreated
+    // collect the author of this post
+    Pub pub = Pub.find(event.pubId)
+    FeedPub feedPub = FeedPub.create()
+    feedPub
 ```
