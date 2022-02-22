@@ -6,9 +6,9 @@ dataSources:
     name: LensHub
     network: localhost
     source:
-      address: '0x8eF6CAbcAE15FB78b436e67B26FFE80Ba7ef8424'
+      address: '0x1f90CFE1b3Cc545acA5e28955179d875D7c0976f'
       abi: LensHub
-      startBlock: 1039
+      startBlock: 1131
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -32,6 +32,8 @@ dataSources:
           file: ./abis/LensHub.json
         - name: FollowNFT
           file: ./abis/FollowNFT.json
+        - name: Feed
+          file: ./abis/Feed.json
       eventHandlers:
         - event: 'PostCreated(indexed uint256,indexed uint256,string,address,bytes,address,bytes,uint256)'
           handler: handlePostCreated
@@ -41,6 +43,31 @@ dataSources:
           handler: handleFollowed
         - event: 'FollowNFTDeployed(indexed uint256,indexed address,uint256)'
           handler: handleFollowNFTDeployed
+      file: ./src/mappings.ts
+  - kind: ethereum/contract
+    name: Feed
+    network: localhost
+    source:
+      address: '0x86cAaC197C6d75B86B329C434dE2Dbe71800911b'
+      abi: Feed
+      startBlock: 1136
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities: []
+      abis:
+        - name: LensHub
+          file: ./abis/LensHub.json
+        - name: FollowNFT
+          file: ./abis/FollowNFT.json
+        - name: Feed
+          file: ./abis/Feed.json
+      eventHandlers:
+        - event: 'FeedCreated(indexed uint256,indexed uint256)'
+          handler: handleFeedCreated
+        - event: 'PostToFeedCreated(indexed uint256,indexed uint256,indexed uint256,uint256)'
+          handler: handlePostToFeedCreated
       file: ./src/mappings.ts
 templates:
   - kind: ethereum/contract
@@ -60,6 +87,8 @@ templates:
           file: ./abis/LensHub.json
         - name: FollowNFT
           file: ./abis/FollowNFT.json
+        - name: Feed
+          file: ./abis/Feed.json
       eventHandlers:
         - event: 'Transfer(indexed address,indexed address,indexed uint256)'
           handler: handleTransfer

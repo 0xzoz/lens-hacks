@@ -295,16 +295,17 @@ function main() {
                         FollowNFT
                     `)
                 ]
+            },
+            {
+                name: "Feed",
+                type: "data-source",
+                file: './src/mappings.ts',
+                eventHandlers: [
+                    { event: 'FeedCreated(indexed uint256,indexed uint256,indexed address)' },
+                    { event: 'PostToFeedCreated(indexed uint256,indexed uint256,indexed uint256,uint256)' }
+                ],
+                entities: []
             }
-            // {
-            //     name: "Feed",
-            //     eventHandlers: [
-                    
-            //     ],
-            //     entities: [
-
-            //     ]
-            // }
         ]
     })
 

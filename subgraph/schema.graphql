@@ -2,8 +2,14 @@
 type Inbox @entity {
   id: ID!
   user: User!
-  items: [FeedPub!]!
+  items: [InboxItem!]! @derivedFrom(field: "inbox")
   # read: [FeedPub!]!
+}
+
+type InboxItem @entity {
+  id: ID!
+  inbox: Inbox!
+  item: FeedPub!
 }
 
 # type Pub @entity {
@@ -32,7 +38,7 @@ type Feed @entity {
 type User @entity {
   id: ID!
   following: [FollowingEdge!]! @derivedFrom(field: "from")
-  # followers: [FollowingEdge!]! @derivedFrom(field: "to")
+  followers: [FollowingEdge!]! @derivedFrom(field: "to")
   inbox: Inbox!
   profile: Profile!
 }

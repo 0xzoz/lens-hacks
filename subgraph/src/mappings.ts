@@ -17,7 +17,8 @@ import {
     FollowNFTDeployed,
     Followed
 } from "../generated/templates/LensHub/LensHub"
-import { Comment, Post, FollowingEdge, Profile, SocialGraph, FollowNFT, FollowNFTContract as FollowNFTContractEntity, ProfileCreatorWhitelist, CollectModuleWhitelist, FollowModuleWhitelist, ReferenceModuleWhitelist, Mirror, User, Inbox, Feed } from "../generated/schema"
+import { FeedCreated } from '../generated/Feed/Feed'
+import { Comment, InboxItem, Post, FollowingEdge, Profile, SocialGraph, FollowNFT, FollowNFTContract as FollowNFTContractEntity, ProfileCreatorWhitelist, CollectModuleWhitelist, FollowModuleWhitelist, ReferenceModuleWhitelist, Mirror, User, Inbox, Feed, FeedPub } from "../generated/schema"
 import { FollowNFT as FollowNFTContract } from '../generated/templates'
 
 export function handleProfileCreated(event: ProfileCreated): void {
@@ -49,6 +50,7 @@ export function handleProfileCreated(event: ProfileCreated): void {
     if(!user) {
         user = new User(event.params.profileId.toString());
         let inbox = new Inbox(event.params.profileId.toString());
+        inbox.save();
         user.inbox = inbox.id;
         user.profile = entity.id;
         user.save();
@@ -127,8 +129,6 @@ export function handleFollowed(event: Followed): void {
     //     console.log('Ignoring Followed since it contains no profile metadata');
     //     return;
     // }
-
-    
     log.debug(
         "{} {}",
         [
@@ -187,15 +187,55 @@ export function handlePostCreated(event: PostCreated): void {
 
         entity.save();
     }
+
+
 };
 
-export function handlePostToFeed(event: PostToFeedCreated): void {
+export function handleFeedCreated(event: FeedCreated): void {
+    let feed = new Feed(event.params.feedId.toString())
+    feed.name = "";
+    feed.profile = event.params.profileId.toString();
+    feed.owner = event.params.owner;
+    feed.save();
+}
+
+export function handlePostToFeedCreated(event: PostToFeedCreated): void {
     let feed = Feed.load(event.params.profileId.toString());
-    // const followers = feed.profile.user;
-    // for(let i = 0; i < followers.length; i++) {
-    //     let user = User.load(followers[i].id);
-    //     user.inbox
-    // }
+    if (!feed) throw new Error("No feed found for profile")
+
+    const feedProfile = Profile.load(feed.profile);
+    if (!feedProfile) throw new Error("No profile found for feed")
+    
+    const followers = feedProfile.followers;
+    
+    const feedPub = new FeedPub(
+        ""
+        .concat(feed.id)
+        .concat("_")
+        .concat(event.params.pubId.toString())
+    );
+    feedPub.author = event.params.authorProfileId.toString();
+    feedPub.createdAt = event.block.timestamp;
+    feedPub.feed = feed.id;
+    feedPub.pub = event.params.pubId.toString();
+    feedPub.save();
+
+    for(let i = 0; i < followers.length; i++) {
+        // let user = User.load();
+        let inbox = Inbox.load(followers[i]);
+        if (!inbox) throw new Error("No inbox found for profile")
+        
+        let inboxItem = new InboxItem(
+            ""
+            .concat(followers[i])
+            .concat("_")
+            .concat(event.params.pubId.toString())
+        );
+
+        inboxItem.inbox = inbox.id;
+        inboxItem.item = feedPub.id;
+        inboxItem.save();
+    }
 }
 
 export function handleProfileCreatorWhitelisted(event: ProfileCreatorWhitelisted): void {
