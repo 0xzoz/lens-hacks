@@ -5,8 +5,9 @@
     "build-contract": "solc contracts/Gravity.sol --abi -o abis --overwrite && solc contracts/Gravity.sol --bin -o bin --overwrite",
     "create": "graph create liamzebedee/annonce --node https://api.thegraph.com/deploy/",
     "create-local": "graph create liamzebedee/annonce --node http://127.0.0.1:8020",
-    "codegen": "graph codegen",
+    "codegen": "node generate-subgraph-manifest.js && graph codegen",
     "build": "graph build",
+    "generate-manifest-local": "NETWORK=localhost node generate-subgraph-manifest.js",
     "deploy": "graph deploy liamzebedee/annonce --ipfs https://api.thegraph.com/ipfs/ --node https://api.thegraph.com/deploy/",
     "deploy-local": "graph deploy liamzebedee/annonce --ipfs http://localhost:5001 --node http://127.0.0.1:8020"
   },
