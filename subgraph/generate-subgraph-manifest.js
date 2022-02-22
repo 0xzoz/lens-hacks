@@ -11,18 +11,18 @@ const fs = require('fs');
 const SPEC_VERSION = '0.0.4'
 const API_VERSION = '0.0.6'
 
-const generateManifest = ({ context, contracts }) => {
-    const contractFilters = {
-        dataSource: contract => contract.address,
-        template: contract => !contract.address,
-    }
+const contractFilters = {
+    dataSource: contract => contract.address,
+    template: contract => !contract.address,
+}
 
+const generateManifest = ({ context, contracts }) => {
     const renderContract = (source) => {
         const { name, address, abi, startBlock, entities } = source
         const isTemplate = !address
 
         return {
-            "kind": "ethereum/contract",
+            kind: "ethereum/contract",
             name,
             network: context.network,
             source: isTemplate
@@ -47,7 +47,7 @@ const generateManifest = ({ context, contracts }) => {
                         handler
                     }
                 }),
-                file: "./src/mappings.ts"
+                file: source.file || "./src/mappings.ts"
             },
         }
     }
@@ -70,7 +70,7 @@ function load(data) {
     const deployments = require(`../deployments/${network}.json`)
 
     const contracts = data.contracts.map((contract) => {
-        const { name, entities } = contract
+        const { name, entities, file } = contract
 
         const deployment = deployments.contracts[name]
         if(!deployment) throw new Error("Deployment not found for "+name)
@@ -137,27 +137,37 @@ function load(data) {
         // as the address for this target. This is useful when we deploy the main
         // contract as XYZ, and we have a proxy sit in front of it, XYZProxy. 
         // We want to listen on XYZProxy, but use the XYZ contract's ABI.
-        let address
-        if (contract.useAddressOf) {
-            const deployment2 = deployments.contracts[contract.useAddressOf]
-            address = deployment2.address
-        } else {
-            address = deployment.address
-        }
+        let dataSourceInfo = {}
 
-        if (contract.useStartBlockOf) {
-            const deployment2 = deployments.contracts[contract.useStartBlockOf]
-            startBlock = deployment2.deployTransaction.blockNumber
-        } else {
-            startBlock = deployment.deployTransaction.blockNumber
+        if (contract.type == 'data-source') {
+            let address, startBlock
+
+            if (contract.useAddressOf) {
+                const deployment2 = deployments.contracts[contract.useAddressOf]
+                address = deployment2.address
+            } else {
+                address = deployment.address
+            }
+
+            if (contract.useStartBlockOf) {
+                const deployment2 = deployments.contracts[contract.useStartBlockOf]
+                startBlock = deployment2.deployTransaction.blockNumber
+            } else {
+                startBlock = deployment.deployTransaction.blockNumber
+            }
+
+            dataSourceInfo = {
+                address,
+                startBlock
+            }
         }
 
         return {
             name,
-            address,
-            startBlock,
+            ...dataSourceInfo,
             entities,
             eventHandlers,
+            file,
             abi: name,
             abiPath: './' + relative('.', abiPath)
         }
@@ -218,11 +228,13 @@ function generate({ subgraphNetwork, network, contracts }) {
 
     fs.writeFileSync(
         'subgraph.yaml',
-        yaml.dump(manifest, { lineWidth: -1 })
+        yaml.dump(manifest, { lineWidth: -1, noRefs: true })
     )
     return manifest
 }
 
+
+const lines = str => str.split('\n').map(x => x.trim()).filter(x => !!x)
 
 // 
 // Configuration.
@@ -238,35 +250,57 @@ function main() {
         contracts: [
             {
                 name: "LensHub",
+                type: "data-source",
+                file: './src/mappings.ts',
                 useAddressOf: 'LensHubProxy',
                 useStartBlockOf: 'LensHubProxy',
                 eventHandlers: [
-                    {
-                        event: "PostCreated(indexed uint256,indexed uint256,string,address,bytes,address,bytes,uint256)"
-                    },
-                    {
-                        event: "ProfileCreated(indexed uint256,indexed address,indexed address,string,string,address,bytes,string,uint256)"
-                    },
+                    ...lines(`
+                        PostCreated(indexed uint256,indexed uint256,string,address,bytes,address,bytes,uint256)
+                        ProfileCreated(indexed uint256,indexed address,indexed address,string,string,address,bytes,string,uint256)
+                        Followed(indexed address,uint256[],uint256[],uint256)
+                        FollowNFTDeployed(indexed uint256,indexed address,uint256)
+                    `).map(x => { return { event: x } })
                 ],
                 entities: [
-                    // Followed
-                    ...`ProfileCreated
-                    PostCreated
-                    ProfileCreatorWhitelisted
-                    FollowModuleWhitelisted
-                    ReferenceModuleWhitelisted
-                    CollectModuleWhitelisted
-                    DispatcherSet
-                    ProfileImageURISet
-                    FollowNFTURISet
-                    FollowModuleSet
-                    MirrorCreated
-                    CommentCreated`.split('\n').map(x => x.trim())
+                    ...lines(`
+                        ProfileCreated
+                        PostCreated
+                        ProfileCreatorWhitelisted
+                        FollowModuleWhitelisted
+                        ReferenceModuleWhitelisted
+                        CollectModuleWhitelisted
+                        DispatcherSet
+                        ProfileImageURISet
+                        FollowNFTURISet
+                        FollowModuleSet
+                        MirrorCreated
+                        CommentCreated
+                        FollowNFTContract
+                    `)
                 ]
             },
+            {
+                name: "FollowNFT",
+                type: "template",
+                file: './src/follow-nft.ts',
+                eventHandlers: [
+                    ...lines(`
+                        Transfer(indexed address,indexed address,indexed uint256)
+                    `).map(x => { return { event: x } })
+                ],
+                entities: [
+                    ...lines(`
+                        FollowNFTContract
+                        FollowNFT
+                    `)
+                ]
+            }
             // {
             //     name: "Feed",
-            //     eventHandlers: [],
+            //     eventHandlers: [
+                    
+            //     ],
             //     entities: [
 
             //     ]

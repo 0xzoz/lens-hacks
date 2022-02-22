@@ -31,16 +31,35 @@ type Feed @entity {
 
 type User @entity {
   id: ID!
-  following: [Profile!]!
+  following: [FollowingEdge!]! @derivedFrom(field: "from")
+  # followers: [FollowingEdge!]! @derivedFrom(field: "to")
   inbox: Inbox!
   profile: Profile!
 }
 
+type FollowingEdge @entity {
+  id: ID!
+  from: User!
+  to: User!
+}
 
 
 
+# Track new Follow NFT's being cloned.
+# Track Follow NFT mints.
 
+type FollowNFTContract @entity {
+  id: ID!
+  profile: Profile!
+  address: Bytes! # address
+  deployedAt: BigInt!
+}
 
+type FollowNFT @entity {
+  id: ID!
+  contract: FollowNFTContract!
+  owner: Bytes! # address
+}
 
 type Profile @entity {
   id: ID! # profileId uint256
@@ -48,7 +67,7 @@ type Profile @entity {
   owner: Bytes! # address
   profileId: BigInt! # uint256
   pubCount: BigInt! # uint256
-  followNFT: Bytes!  # address
+  followNFT: FollowNFTContract!
   handle: String! # string
   imageURI: String! # string
   followNFTURI: String! # string
@@ -56,6 +75,7 @@ type Profile @entity {
   followModule: Bytes! # address
   followModuleReturnData: Bytes!
   dispatcher: Bytes!
+  followers: [Profile!]!
 }
 
 type Comment @entity {

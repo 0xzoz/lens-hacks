@@ -1,7 +1,6 @@
 import { BigInt, Bytes } from "@graphprotocol/graph-ts";
 import {
     LensHub,
-    // Followed,
     PostCreated,
     ProfileCreated,
     ProfileCreatorWhitelisted,
@@ -13,12 +12,15 @@ import {
     FollowNFTURISet,
     FollowModuleSet,
     CommentCreated,
-    MirrorCreated
-} from "../generated/LensHub/LensHub"
-import { Comment, Post, Profile, SocialGraph, ProfileCreatorWhitelist, CollectModuleWhitelist, FollowModuleWhitelist, ReferenceModuleWhitelist, Mirror } from "../generated/schema"
+    MirrorCreated,
+    PostToFeedCreated,
+    FollowNFTDeployed,
+    Followed
+} from "../generated/templates/LensHub/LensHub"
+import { Comment, Post, FollowingEdge, Profile, SocialGraph, FollowNFT, FollowNFTContract as FollowNFTContractEntity, ProfileCreatorWhitelist, CollectModuleWhitelist, FollowModuleWhitelist, ReferenceModuleWhitelist, Mirror, User, Inbox, Feed } from "../generated/schema"
+import { FollowNFT as FollowNFTContract } from '../generated/templates'
 
 export function handleProfileCreated(event: ProfileCreated): void {
-
     let lensContract = LensHub.bind(event.address);
     let entity = Profile.load(event.params.profileId.toString());
 
@@ -31,7 +33,7 @@ export function handleProfileCreated(event: ProfileCreated): void {
         entity.owner = event.params.to;
         entity.pubCount = profileData.pubCount;
         entity.followModule = profileData.followModule;
-        entity.followNFT = profileData.followNFT;
+        // entity.followNFT = profileData.followNFT;
         entity.handle = profileData.handle.toString();
         entity.imageURI = profileData.imageURI.toString();
         entity.createdOn = event.params.timestamp;
@@ -41,6 +43,16 @@ export function handleProfileCreated(event: ProfileCreated): void {
         entity.save();
     }
 
+    // Create a user for this profile.
+    let user = User.load(event.params.profileId.toString());
+
+    if(!user) {
+        user = new User(event.params.profileId.toString());
+        let inbox = new Inbox(event.params.profileId.toString());
+        user.inbox = inbox.id;
+        user.profile = entity.id;
+        user.save();
+    }
 };
 
 export function handleCommentCreated(event: CommentCreated): void {
@@ -84,32 +96,78 @@ export function handleMirrorCreated(event: MirrorCreated): void {
 
 };
 
-// export function handleFollowed(event: Followed): void {
+export function handleFollowNFTDeployed(event: FollowNFTDeployed): void {
+    let profileId = event.params.profileId;
+    let followNFTAddress = event.params.followNFT;
+    let timestamp = event.params.timestamp;
 
-//     let entity = SocialGraph.load(event.params.follower.toHexString());
+    let followNFT = FollowNFTContractEntity.load(followNFTAddress.toString());
 
-//     if (!entity) {
-//         let entity = new SocialGraph(event.params.follower.toHexString());
-//         let newFollowingList: string[] = [];
-//         for (let index = 0; index < event.params.profileIds.length; index++) {
-//             const profileId = event.params.profileIds[index].toString();
-//             newFollowingList.push(profileId);
-//         }
+    if(!followNFT) {
+        followNFT = new FollowNFTContractEntity(followNFTAddress.toString());
+        let profile = Profile.load(profileId.toString());
+        if (!profile) {
+            throw new Error("Profile not found")
+        }
+        followNFT.profile = profile.id;
+        followNFT.deployedAt = timestamp;
+        followNFT.address = followNFTAddress;
+        followNFT.save();
 
-//         entity.following = newFollowingList;
-//         entity.save();
-//     }
-//     else {
-//         let newFollowingList: string[] = entity.following;
-//         for (let index = 0; index < event.params.profileIds.length; index++) {
-//             const profileId = event.params.profileIds[index].toString();
-//             newFollowingList.push(profileId);
-//         }
-//         entity.following = newFollowingList;
-//         entity.save();
-//     };
+        // Start tracking the Follow NFT contract.
+        FollowNFTContract.create(followNFTAddress);
+    }
+}
 
-// };
+import { log } from '@graphprotocol/graph-ts'
+
+export function handleFollowed(event: Followed): void {
+    // We don't care about follows from Ethereum accounts. Only profiles.
+    // if (event.params.followedFromProfileIds.length == 0) {
+    //     console.log('Ignoring Followed since it contains no profile metadata');
+    //     return;
+    // }
+
+    
+    log.debug(
+        "{} {}",
+        [
+            event.params.profileIds.join(',').toString(),
+            event.params.followedFromProfileIds.join(',').toString()
+        ]
+    );
+
+    const fromProfileIds = event.params.followedFromProfileIds;
+    const toProfileIds = event.params.profileIds;
+
+    // Update the following array.
+    for (let i = 0; i < fromProfileIds.length; i++) {
+        const fromProfileId = fromProfileIds[i];
+        // const user = User.load(fromProfile.toString());
+        // if (user == null) {
+        //     console.log("User not found");
+        //     throw new Error("User not found");
+        // }
+        
+        for (let j = 0; j < toProfileIds.length; j++) {
+            const toProfileId = toProfileIds[j];
+            let edgeId = ""
+                .concat(fromProfileId.toString())
+                .concat("_")
+                .concat(toProfileId.toString());
+            
+            let edge = FollowingEdge.load(edgeId);
+            
+            if (edge == null) {
+                edge = new FollowingEdge(edgeId);
+                edge.from = fromProfileId.toString();
+                edge.to = toProfileId.toString();
+                edge.save();
+            }
+        }
+    }
+
+};
 
 export function handlePostCreated(event: PostCreated): void {
 
@@ -129,8 +187,16 @@ export function handlePostCreated(event: PostCreated): void {
 
         entity.save();
     }
-
 };
+
+export function handlePostToFeed(event: PostToFeedCreated): void {
+    let feed = Feed.load(event.params.profileId.toString());
+    // const followers = feed.profile.user;
+    // for(let i = 0; i < followers.length; i++) {
+    //     let user = User.load(followers[i].id);
+    //     user.inbox
+    // }
+}
 
 export function handleProfileCreatorWhitelisted(event: ProfileCreatorWhitelisted): void {
 

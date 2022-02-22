@@ -6,9 +6,9 @@ dataSources:
     name: LensHub
     network: localhost
     source:
-      address: '0x6434347B144086cf7b5C342215482D55FeF64B8D'
+      address: '0x8eF6CAbcAE15FB78b436e67B26FFE80Ba7ef8424'
       abi: LensHub
-      startBlock: 830
+      startBlock: 1039
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -26,13 +26,41 @@ dataSources:
         - FollowModuleSet
         - MirrorCreated
         - CommentCreated
+        - FollowNFTContract
       abis:
         - name: LensHub
           file: ./abis/LensHub.json
+        - name: FollowNFT
+          file: ./abis/FollowNFT.json
       eventHandlers:
         - event: 'PostCreated(indexed uint256,indexed uint256,string,address,bytes,address,bytes,uint256)'
           handler: handlePostCreated
         - event: 'ProfileCreated(indexed uint256,indexed address,indexed address,string,string,address,bytes,string,uint256)'
           handler: handleProfileCreated
+        - event: 'Followed(indexed address,uint256[],uint256[],uint256)'
+          handler: handleFollowed
+        - event: 'FollowNFTDeployed(indexed uint256,indexed address,uint256)'
+          handler: handleFollowNFTDeployed
       file: ./src/mappings.ts
-templates: []
+templates:
+  - kind: ethereum/contract
+    name: FollowNFT
+    network: localhost
+    source:
+      abi: FollowNFT
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - FollowNFTContract
+        - FollowNFT
+      abis:
+        - name: LensHub
+          file: ./abis/LensHub.json
+        - name: FollowNFT
+          file: ./abis/FollowNFT.json
+      eventHandlers:
+        - event: 'Transfer(indexed address,indexed address,indexed uint256)'
+          handler: handleTransfer
+      file: ./src/follow-nft.ts
